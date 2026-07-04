@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const PORT = 8080;
-
+// 변경: Render가 제공하는 포트를 사용하고, 없으면 8080을 씁니다.
+const PORT = process.env.PORT || 8080;
 // 미들웨어 설정
 app.use(cors());
 app.use(express.json());
