@@ -1,3 +1,8 @@
+const dns = require('dns');
+
+dns.setDefaultResultOrder('ipv4first');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -9,9 +14,12 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
+
 // 1. MongoDB 연결 (미리 설정하신 .env 파일의 MONGO_URI를 사용합니다)
 // URI 맨 끝에 /memory_test 라고 적혀있으면 그 이름으로 DB가 자동 생성됩니다.
 const MONGO_URI = process.env.MONGO_URI;
+
+console.log("Mongo URI:", MONGO_URI);
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('🎉 MongoDB 연결 성공!'))
