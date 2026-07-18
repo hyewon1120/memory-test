@@ -347,7 +347,7 @@ function App() {
       {/* 9. Digit Span 예시 화면 */}
       {step === 'ds-example' && (
         <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '32px', marginBottom: '20px', color: '#333' }}>Digit Span Backward</h2>
+          <h2 style={{ fontSize: '32px', marginBottom: '20px', color: '#eee6e6' }}>Digit Span Backward</h2>
           <div style={{ backgroundColor: '#f4f3ec', padding: '30px', borderRadius: '10px', border: '1px solid #e5e4e7', marginBottom: '40px', maxWidth: '650px', textAlign: 'center', lineHeight: '1.8', fontSize: '18px', color: '#333' }}>
             <p style={{ margin: '0 0 20px', fontWeight: 'bold', fontSize: '20px', color: '#aa3bff' }}>EX) 4자리</p>
             <p style={{ margin: '10px 0' }}>화면에 다음과 같이 숫자가 제시됩니다.</p>
