@@ -14,47 +14,77 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-
-// 1. MongoDB 연결 (미리 설정하신 .env 파일의 MONGO_URI를 사용합니다)
-// URI 맨 끝에 /memory_test 라고 적혀있으면 그 이름으로 DB가 자동 생성됩니다.
 const MONGO_URI = process.env.MONGO_URI;
-
 console.log("Mongo URI:", MONGO_URI);
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('🎉 MongoDB 연결 성공!'))
   .catch(err => console.error('❌ MongoDB 연결 실패:', err));
 
-// 2. 데이터 구조(Schema) 만들기
-// 학생이 누른 버튼 로그를 어떤 형태로 저장할지 정의합니다.
-const LogSchema = new mongoose.Schema({
-    userId: { type: String, required: true },     // 유저 식별자
-    action: { type: String, required: true },     // 어떤 행동을 했는지 (예: BUTTON_CLICK)
-    timestamp: { type: Date, default: Date.now }, // 클릭한 시간
-    details: mongoose.Schema.Types.Mixed          // 기타 상세 정보 (n-back 종류, 맞춤/틀림 등)
+// =========================================================
+// 2. 데이터 구조(Schema) 3개로 분리 생성
+// =========================================================
+
+// ① 로그인(정보 입력) 로그 스키마
+const LoginSchema = new mongoose.Schema({
+    user_id: { type: String, required: true },
+    user_name: { type: String, required: true },
+    age: { type: String, required: true },
+    timestamp: { type: String, required: true } // KST 문자열 저장
 });
 
-// 'UserLog'라는 이름으로 모델을 만듭니다. 
-// 몽고DB에는 자동으로 소문자 복수형인 'userlogs'라는 컬렉션(테이블)이 생성됩니다.
-const Log = mongoose.model('UserLog', LogSchema);
+// ② n-back 로그 스키마
+const NBackSchema = new mongoose.Schema({
+    user_id: { type: String, required: true },
+    nback_level: { type: Number, required: true },
+    trial: { type: Number, required: true },
+    user_answer: { type: String, required: true },
+    correct_answer: { type: String, required: true },
+    is_correct: { type: Boolean, required: true },
+    reaction_time: { type: Number, default: null }, // ms 단위, 시간 초과 시 null
+    timestamp: { type: String, required: true }
+});
 
+// ③ Digit Span 로그 스키마
+const DigitSpanSchema = new mongoose.Schema({
+    user_id: { type: String, required: true },
+    level: { type: Number, required: true },
+    trial: { type: Number, required: true },
+    sequence: { type: String, required: true },
+    user_answer: { type: String, required: true },
+    correct_answer: { type: String, required: true },
+    is_correct: { type: Boolean, required: true },
+    reaction_time: { type: Number, default: null }, // ms 단위, 시간 초과 시 null
+    timestamp: { type: String, required: true }
+});
+
+// 몽고DB 모델 생성
+const LoginLog = mongoose.model('LoginLog', LoginSchema);
+const NBackLog = mongoose.model('NBackLog', NBackSchema);
+const DigitSpanLog = mongoose.model('DigitSpanLog', DigitSpanSchema);
+
+
+// =========================================================
 // 3. 데이터를 받아서 저장하는 API
+// =========================================================
 app.post('/api/log', async (req, res) => {
-    const { userId, action, timestamp, details } = req.body;
+    // 프론트에서 보낸 logType으로 어떤 스키마에 저장할지 결정합니다.
+    const { logType, ...data } = req.body;
     
     try {
-        // 기존의 console.log 대신, 새로운 데이터 문서를 생성합니다.
-        const newLog = new Log({
-            userId,
-            action,
-            timestamp,
-            details
-        });
+        if (logType === 'LOGIN') {
+            await new LoginLog(data).save();
+            console.log(`[DB 저장] LOGIN | User: ${data.user_name}`);
+        } 
+        else if (logType === 'NBACK') {
+            await new NBackLog(data).save();
+            console.log(`[DB 저장] N-BACK | User: ${data.user_id} | Trial: ${data.trial} | Correct: ${data.is_correct}`);
+        } 
+        else if (logType === 'DIGITSPAN') {
+            await new DigitSpanLog(data).save();
+            console.log(`[DB 저장] DIGIT SPAN | User: ${data.user_id} | Level: ${data.level} | Correct: ${data.is_correct}`);
+        }
 
-        // 몽고DB에 실제 저장! (이때 DB와 컬렉션이 없으면 자동 생성됨)
-        await newLog.save();
-        
-        console.log(`[DB 저장 완료] ID: ${userId} | Action: ${action}`);
         res.status(200).json({ message: "로그가 MongoDB에 성공적으로 저장되었습니다." });
     } catch (error) {
         console.error("❌ DB 저장 에러:", error);
